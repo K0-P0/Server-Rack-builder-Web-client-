@@ -1,3 +1,5 @@
+Website link in case you dont want to download this: https://serverbuild.kopo.click/
+
 # Server Rack Planner Web
 
 A lightweight, secure, and fully client-side tool for planning server rack layouts. Visualize your homelab or enterprise setup with drag-and-drop simplicity.
