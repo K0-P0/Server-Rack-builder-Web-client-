@@ -24,6 +24,8 @@ This tool runs entirely in your browser. While this provides great privacy, impo
 * **Rack Sizes:** Support for 6U, 9U, 12U, 15U, 18U, 20U, 24U, 30U, 42U, and 48U racks.
 * **Export:** Save your entire project or export individual custom components to share.
 
+---
+
 ## 🛠️ How to Use
 
 ### 1. Adding Components
@@ -42,6 +44,8 @@ You can populate your library by importing JSON files.
 3.  **Pro Tip:** You can also **Drag & Drop** JSON files directly onto the "Library" sidebar.
 
 Check the `json_libraries` folder in this repository for pre-made lists (Ubiquiti, Dell, Synology, etc.).
+
+---
 
 ## 📦 How to Self-Host
 
@@ -69,7 +73,7 @@ docker compose up -d
 
 Access it at http://YOUR-IP:8080.
 ```
-Option 2: Static Web Host (GitHub Pages / Cloudflare Pages)
+## Option 2: Static Web Host (GitHub Pages / Cloudflare Pages)
 
 Simply upload the index.html file to GitHub Pages or drop it into a Cloudflare Pages project. It requires no backend logic.
 
@@ -101,6 +105,6 @@ Feel free to submit Pull Requests with new JSON component lists! Please ensure t
 
 If this tool saved you time planning your lab, consider buying me a coffee (or a patch cable)!
 
-Donate via PayPal
+[Donate via PayPal](https://paypal.me/DekodaCaldwell)
 
 Built by KOPO
