@@ -1,0 +1,44 @@
+{
+    "Behringer X32 Rack Mixer": {
+        "size": 3,
+        "color": "#424242",
+        "watts": 60,
+        "weight": 6.5
+    },
+    "Focusrite Scarlett OctoPre": {
+        "size": 1,
+        "color": "#b71c1c",
+        "watts": 15,
+        "weight": 3.2
+    },
+    "Furman Power Conditioner": {
+        "size": 1,
+        "color": "#000000",
+        "watts": 5,
+        "weight": 5.0
+    },
+    "Shure Wireless Receiver (Quad)": {
+        "size": 1,
+        "color": "#212121",
+        "watts": 20,
+        "weight": 3.5
+    },
+    "Ampeg Bass Amp (Rackmount)": {
+        "size": 2,
+        "color": "#000000",
+        "watts": 300,
+        "weight": 15.0
+    },
+    "XLR Patch Bay (48 Point)": {
+        "size": 1,
+        "color": "#37474f",
+        "watts": 0,
+        "weight": 2.0
+    },
+    "Crown Power Amplifier": {
+        "size": 2,
+        "color": "#cfd8dc",
+        "watts": 1000,
+        "weight": 18.0
+    }
+}

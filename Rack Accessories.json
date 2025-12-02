@@ -1,0 +1,74 @@
+{
+    "1U Blanking Plate": {
+        "size": 1,
+        "color": "#1a1a1a",
+        "watts": 0,
+        "weight": 0.2
+    },
+    "2U Blanking Plate": {
+        "size": 2,
+        "color": "#1a1a1a",
+        "watts": 0,
+        "weight": 0.4
+    },
+    "4U Blanking Plate": {
+        "size": 4,
+        "color": "#1a1a1a",
+        "watts": 0,
+        "weight": 0.8
+    },
+    "Brush Strip Panel (Pass-through)": {
+        "size": 1,
+        "color": "#333333",
+        "watts": 0,
+        "weight": 0.5
+    },
+    "Cable Management Duct (Horizontal)": {
+        "size": 1,
+        "color": "#212121",
+        "watts": 0,
+        "weight": 0.8
+    },
+    "Heavy Duty Fixed Shelf": {
+        "size": 1,
+        "color": "#424242",
+        "watts": 0,
+        "weight": 4.0
+    },
+    "Sliding Shelf (Keyboard/Laptop)": {
+        "size": 1,
+        "color": "#616161",
+        "watts": 0,
+        "weight": 5.0
+    },
+    "2U Lockable Drawer": {
+        "size": 2,
+        "color": "#263238",
+        "watts": 0,
+        "weight": 8.0
+    },
+    "3U Storage Drawer": {
+        "size": 3,
+        "color": "#263238",
+        "watts": 0,
+        "weight": 10.0
+    },
+    "4U Storage Drawer": {
+        "size": 4,
+        "color": "#263238",
+        "watts": 0,
+        "weight": 12.0
+    },
+    "DIN Rail Mount Frame": {
+        "size": 3,
+        "color": "#757575",
+        "watts": 0,
+        "weight": 2.5
+    },
+    "LCD KVM Console (Closed)": {
+        "size": 1,
+        "color": "#000000",
+        "watts": 25,
+        "weight": 12.0
+    }
+}

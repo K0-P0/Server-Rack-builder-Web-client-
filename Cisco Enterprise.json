@@ -1,0 +1,38 @@
+{
+    "Cisco Catalyst 9300 Switch": {
+        "size": 1,
+        "color": "#00bceb",
+        "watts": 110,
+        "weight": 7.5
+    },
+    "Cisco ISR 4331 Router": {
+        "size": 1,
+        "color": "#005e75",
+        "watts": 45,
+        "weight": 6.0
+    },
+    "Cisco Catalyst 3850 (Legacy)": {
+        "size": 1,
+        "color": "#004050",
+        "watts": 120,
+        "weight": 7.0
+    },
+    "Cisco UCS C220 Server": {
+        "size": 1,
+        "color": "#546e7a",
+        "watts": 450,
+        "weight": 16.0
+    },
+    "Meraki MX85 Security Appliance": {
+        "size": 1,
+        "color": "#eeeeee",
+        "watts": 30,
+        "weight": 3.5
+    },
+    "Meraki MS120 Switch": {
+        "size": 1,
+        "color": "#eeeeee",
+        "watts": 25,
+        "weight": 2.8
+    }
+}
