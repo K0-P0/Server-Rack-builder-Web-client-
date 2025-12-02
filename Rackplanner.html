@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ServerRack Planner — Polished UI</title>
+  <style>
+    :root{
+      --bg:#0f1112; --panel:#17191a; --muted:#a6b0b6; --accent:#7c4dff; --accent-2:#4fb3f6; --success:#4caf50; --danger:#ef5350; --card:#141616; --glass: rgba(255,255,255,0.03);
+      --kopo:#ff7ab6;
+      --radius:10px;
+      --u-px:40px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Segoe UI Emoji,Arial;background:linear-gradient(180deg,#0b0c0d, #0f1112);color:#e6eef3}
+    .app{display:flex;height:100vh;overflow:hidden}
+
+    .left{width:300px;background:linear-gradient(180deg,var(--panel),#111);border-right:1px solid rgba(255,255,255,0.03);padding:18px;display:flex;flex-direction:column;gap:12px; transition: width 0.3s, padding 0.3s;}
+    .left.collapsed { width: 0; padding: 0 0; overflow: hidden; border: none; }
+    
+    .left .head{display:flex;align-items:center;justify-content:space-between}
+    h2{margin:0;font-size:1.05rem}
+    .muted{color:var(--muted);font-size:0.86rem}
+    #search{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#0d0e0f;color:var(--muted); width:100%}
+    #palette-list{overflow:auto;flex:1;padding-right:6px;margin-top:6px}
+    
+    .category-header{margin-top:12px;color:var(--accent-2);font-weight:700;font-size:0.78rem;border-bottom:1px dashed rgba(255,255,255,0.02);padding-bottom:8px; text-transform: uppercase;}
+    
+    .item{
+        display:flex; 
+        align-items:center; 
+        gap:12px; 
+        background:var(--card);
+        padding:10px;
+        border-radius:8px;
+        margin-top:8px;
+        cursor:grab;
+        border: 1px solid rgba(255,255,255,0.02);
+        transition: transform 0.2s, background 0.2s;
+    }
+    
+    .item:hover{transform:translateX(3px); background: #1f2122;}
+    .item:active{cursor:grabbing;}
+
+    .item-pill {
+        width: 6px;
+        height: 28px;
+        border-radius: 10px;
+        flex-shrink: 0;
+    }
+    .item-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+    }
+    .item-name {
+        font-weight: 600;
+        font-size: 0.92rem;
+        color: #e6eef3;
+        line-height: 1.1;
+    }
+    .item-details {
+        font-size: 0.75rem;
+        color: var(--muted);
+        opacity: 0.8;
+    }
+    .item-size-badge {
+        font-size: 0.9rem;
+        color: var(--muted);
+        font-weight: 600;
+        margin-left: 4px;
+    }
+    
+    .import-row{display:flex;gap:8px}
+
+    .center{flex:1;display:flex;flex-direction:column;align-items:center;overflow:hidden; position:relative;}
+    .topbar{width:100%;padding:24px; max-width:1100px;display:flex;justify-content:space-between;align-items:center;gap:12px; z-index: 10;}
+    
+    .canvas-scroller { flex:1; overflow:auto; width: 100%; display: flex; justify-content: center; padding: 20px;}
+
+    .controls{display:flex;gap:8px}
+    select{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:#0c0d0e;color:var(--muted)}
+    button.primary{background:linear-gradient(90deg,var(--accent),#5a9cff);border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:10px;color:var(--muted);cursor:pointer}
+    button:hover { filter: brightness(1.2); }
+
+    .rack-wrap{background:linear-gradient(180deg,#0b0b0b,#0e0e0e);padding:18px;border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,0.6); height: fit-content;}
+    canvas{display:block;border-radius:8px;background:#0b0b0b; cursor: crosshair;}
+
+    .right{width:300px;background:linear-gradient(180deg,var(--panel),#111);padding:18px;display:flex;flex-direction:column;gap:12px;border-left:1px solid rgba(255,255,255,0.03); transition: width 0.3s, padding 0.3s;}
+    .right.collapsed-right { width: 0; padding: 0 0; overflow: hidden; border: none; }
+
+    .stack{display:flex;flex-direction:column;gap:10px}
+    .btn{padding:12px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+    .btn.purple{background:var(--accent); color:white;}
+    .btn.blue{background:var(--accent-2);color:#041c2c}
+    .btn.green{background:var(--success);color:#04260f}
+    .btn.orange{background:#ffb74d;color:#2d1b00}
+    .btn.red{background:var(--danger); color: white;}
+    .stats{background:linear-gradient(180deg,#0b0b0b,#0f0f0f);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+    .stat-line{display:flex;justify-content:space-between;color:var(--muted);margin:6px 0}
+
+    .help-btn{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg,#111,#101010);cursor:pointer}
+    .help-btn .icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#1f1b3a,#372c6a);box-shadow:inset 0 -6px 18px rgba(0,0,0,0.4)}
+    .help-btn .icon svg{width:18px;height:18px;fill:white}
+
+    .footer{margin-top:auto;text-align:center;color:var(--muted);font-size:0.85rem}
+    .kopo{color:var(--kopo);font-weight:700}
+
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,8,0.6);backdrop-filter: blur(6px);z-index:60}
+    .modal .card{width:560px;background:linear-gradient(180deg,#0e0f11,#131416);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .modal h3{margin:0;color:var(--accent-2)}
+    .modal .muted{color:var(--muted);margin-top:8px}
+    .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+    .donate{display:flex;gap:8px;align-items:center;background:linear-gradient(90deg,#ff8fc4,#7c4dff);padding:10px;border-radius:10px;color:white;text-decoration:none;font-weight:800}
+
+    .help-grid { display: grid; gap: 16px; margin-top: 15px; }
+    
+    .shortcut-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: rgba(255,255,255,0.02);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.02);
+    }
+    
+    .shortcut-action { font-size: 0.9rem; color: #e6eef3; }
+    
+    .keys { display: flex; gap: 6px; }
+    
+    .key-cap {
+        background: #25282a;
+        border: 1px solid #3d4144;
+        border-bottom: 2px solid #3d4144; 
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--muted);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    
+    .tip-box {
+        margin-top: 20px;
+        padding: 12px;
+        background: rgba(124, 77, 255, 0.08); 
+        border: 1px solid rgba(124, 77, 255, 0.2);
+        border-radius: 8px;
+    }
+    .tip-title { color: var(--accent); font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; display:flex; align-items:center; gap:6px;}
+
+    @media(max-width:900px){.left{display:none}.right{display:none}.center{padding:16px}.rack-wrap{width:100%}}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="left">
+      <div class="head"><div><h2>Library</h2><div class="muted">Drag & Drop JSON files here</div></div><button id="left-toggle" class="ghost" onclick="toggleLeft()">☰</button></div>
+      <input id="search" placeholder="Search components..." oninput="app.filterPalette()">
+      <div id="palette-list"></div>
+      <div class="import-row"><button class="ghost" onclick="document.getElementById('file-input').click()">Import JSON</button><input id="file-input" type="file" accept=".json" multiple style="display:none" onchange="app.importCustomList(this)"></div>
+      <div class="footer">Built by <span class="kopo">KOPO ❤️</span></div>
+    </div>
+
+    <div class="center">
+      <div class="topbar">
+        <div style="display:flex; gap: 10px; align-items:center;">
+            <button id="restore-left" class="ghost" onclick="toggleLeft()" style="display:none; font-weight:bold;">➜ Library</button>
+            <div>
+                <h2 id="view-label">Rack View: Front</h2>
+                <div class="muted">Click & drag to move — right-click to remove</div>
+            </div>
+        </div>
+
+        <div class="controls">
+          <select id="rack-size-select" onchange="app.resizeRack()">
+            <option value="9">9U</option>
+            <option value="12">12U</option>
+            <option value="15">15U</option>
+            <option value="18" selected>18U</option>
+            <option value="20">20U</option>
+            <option value="24">24U</option>
+            <option value="28">28U</option>
+            <option value="30">30U</option>
+            <option value="32">32U</option>
+            <option value="34">34U</option>
+            <option value="38">38U</option>
+            <option value="40">40U</option>
+            <option value="42">42U</option>
+          </select>
+          <button class="primary" onclick="app.toggleView()">Switch View (Front/Rear)</button>
+          <button class="ghost" onclick="app.openCreator()">➕ Create</button>
+          <button id="restore-right" class="ghost" onclick="toggleRight()" style="display:none; font-weight:bold;">⚙️</button>
+        </div>
+      </div>
+
+      <div class="canvas-scroller">
+        <div class="rack-wrap">
+            <canvas id="rackCanvas" width="680" height="432" oncontextmenu="return false"></canvas>
+            
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center; justify-content:center;">
+                <button class="btn purple" onclick="app.saveProject()">Save</button>
+                <button class="btn blue" onclick="document.getElementById('project-input').click()">Load</button>
+                <input id="project-input" type="file" accept=".json" onchange="app.loadProject(this)" style="display:none">
+                <button class="btn green" onclick="app.exportPNG()">PNG</button>
+                <button class="btn ghost" onclick="app.undo()">Undo</button>
+                <button class="btn ghost" onclick="app.redo()">Redo</button>
+                <button class="btn red" onclick="app.clearRack()">Clear</button>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div><h3 style="margin:0">RACK HEIGHT</h3><div class="muted">Configure & controls</div></div><button id="right-toggle" class="ghost" onclick="toggleRight()">☰</button></div>
+
+      <div class="stack">
+        <button class="btn purple" onclick="app.openCreator()">+ Create Custom Item</button>
+        <button class="btn blue" onclick="document.getElementById('file-input').click()">Import JSON List</button>
+        <a class="muted" href="https://github.com/K0-P0/Server-Rack-builder-Web-client-" target="_blank">Need parts? Get them on GitHub ↗</a>
+        
+        <div class="help-btn" onclick="app.openHelp()">
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm.25 15h-1.5v-1.5h1.5V17zm1.75-6.25c-.28.34-.83.84-1.24 1.12-.53.38-.76.62-.76 1.38v.5h-1.5v-.75c0-1.02.37-1.62 1.06-2.24.45-.42.98-.88.98-1.62 0-.89-.66-1.5-1.63-1.5-.91 0-1.54.53-1.63 1.36h-1.5c.08-1.9 1.58-3.36 3.13-3.86V6h1.5v1.01c1.66.2 2.63 1.54 2.63 3.24 0 1.02-.4 1.92-1.28 2.49z"></path></svg></div>
+          <div>
+            <div style="font-weight:800">Help & Shortcuts</div>
+            <div class="muted">Tips, shortcuts & donate</div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat-line"><span>Used:</span><span id="stat-used">0 U</span></div>
+          <div class="stat-line"><span>Power:</span><span id="stat-power">0 W</span></div>
+          <div class="stat-line"><span>Weight:</span><span id="stat-weight">0 kg</span></div>
+        </div>
+
+      </div>
+
+      <div class="footer">Built by <span class="kopo">KOPO ❤️</span></div>
+    </div>
+  </div>
+
+  <div id="createModal" class="modal"><div class="card">
+    <h3>Create Component</h3>
+    <div class="muted">Provide a name, size, color, power & weight</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input id="new-name" placeholder="Name" style="flex:1;padding:10px;border-radius:8px;background:#0b0b0b;border:1px solid rgba(255,255,255,0.03);color:inherit">
+      <input id="new-size" type="number" min="1" max="42" value="1" style="width:90px;padding:10px;border-radius:8px;background:#0b0b0b;border:1px solid rgba(255,255,255,0.03);color:white">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="new-color" type="color" value="#2196f3" style="width:120px;height:40px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)">
+      <input id="new-watts" type="number" placeholder="Watts" value="0" style="flex:1;padding:10px;border-radius:8px;background:#0b0b0b;border:1px solid rgba(255,255,255,0.03);color:white">
+      <input id="new-weight" type="number" placeholder="Weight (kg)" value="0" style="width:140px;padding:10px;border-radius:8px;background:#0b0b0b;border:1px solid rgba(255,255,255,0.03);color:white">
+    </div>
+    <div class="actions"><button class="ghost" onclick="app.closeCreator()">Cancel</button><button class="primary" onclick="app.exportSingleItem()">Export</button><button class="primary" onclick="app.saveCustomItem()">Add</button></div>
+  </div></div>
+
+  <div id="helpModal" class="modal"><div class="card" style="width: 500px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="font-size:1.2rem;">Controls & Shortcuts</h3>
+        <button class="ghost" onclick="app.closeHelp()" style="padding:5px 10px;">✕</button>
+    </div>
+    
+    <div class="muted" style="margin-bottom:15px">Master your rack planning with these quick actions.</div>
+
+    <div class="help-grid">
+        <div class="shortcut-row">
+            <span class="shortcut-action">Move Component</span>
+            <div class="keys"><span class="key-cap">Left Click</span> <span style="font-size:0.8rem; padding-top:4px;">+</span> <span class="key-cap">Drag</span></div>
+        </div>
+        <div class="shortcut-row">
+            <span class="shortcut-action">Remove Item</span>
+            <div class="keys"><span class="key-cap">Right Click</span></div>
+        </div>
+        <div class="shortcut-row">
+            <span class="shortcut-action">Duplicate Item</span>
+            <div class="keys"><span class="key-cap">Shift</span> <span style="font-size:0.8rem; padding-top:4px;">+</span> <span class="key-cap">Left Click</span></div>
+        </div>
+        <div class="shortcut-row">
+            <span class="shortcut-action">Switch View (Front/Rear)</span>
+            <div class="keys"><span class="key-cap">V</span></div>
+        </div>
+    </div>
+
+    <div class="tip-box">
+        <div class="tip-title">⚡ Pro Tips</div>
+        <ul class="muted" style="margin:0; padding-left:20px; font-size:0.85rem; line-height: 1.6;">
+            <li>Drag & Drop <b>.json</b> files directly onto the library panel to import.</li>
+            <li>Front and Rear views are independent—switch views to organize cables in the back.</li>
+            <li>Use the <b>Export PNG</b> button to share your layout with others.</li>
+        </ul>
+    </div>
+
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:700; font-size:0.9rem; color:#e6eef3;">Support the project</div>
+          <div class="muted" style="font-size:0.8rem;">Free & open source.</div>
+        </div>
+        <a class="donate" href="https://paypal.me/DekodaCaldwell" target="_blank" rel="noopener noreferrer" style="font-size:0.85rem; padding:8px 12px;">
+           ☕ Donate via PayPal
+        </a>
+    </div>
+
+  </div></div>
+
+  <div id="aboutModal" class="modal"><div class="card" style="text-align:center"><h3>About</h3><p class="muted">ServerRack Planner — polished by KOPO</p><div class="actions"><button class="ghost" onclick="app.closeAbout()">Close</button></div></div></div>
+
+  <script>
+    const U_PIXELS = 40;
+    const RACK_LEFT_MARGIN = 40;
+    const RACK_RIGHT_MARGIN = 640; 
+    
+    const defaultCategories = {
+        "Networking": {
+            "UDM Pro": {size: 1, color: "#e0e0e0", watts: 50, weight: 4},
+            "Switch 24 PoE": {size: 1, color: "#e0e0e0", watts: 250, weight: 3},
+            "Patch Panel": {size: 1, color: "#333333", watts: 0, weight: 1}
+        },
+        "Servers": {
+            "Dell R740 (2U)": {size: 2, color: "#212121", watts: 750, weight: 28},
+            "1U Generic Server": {size: 1, color: "#4CAF50", watts: 300, weight: 15}
+        },
+        "Power": {
+            "UPS 1500VA": {size: 2, color: "#3e2723", watts: 50, weight: 25},
+            "PDU": {size: 1, color: "#F44336", watts: 0, weight: 2}
+        },
+        "Custom": {} 
+    };
+
+    class RackApp {
+        constructor() {
+            this.canvas = document.getElementById('rackCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            
+            // UPDATED: Default set to 18
+            this.rackHeight = 18; 
+            this.categories = JSON.parse(JSON.stringify(defaultCategories));
+            
+            this.views = { "Front": [], "Rear": [] };
+            this.currentView = "Front";
+            
+            this.history = [];
+            this.historyStep = -1;
+            
+            this.isDragging = false;
+            this.draggedItem = null; 
+            
+            this.setupCanvasEvents();
+            this.setupKeyboardEvents(); 
+            this.setupDragAndDrop();
+            this.renderPalette();
+            this.draw();
+            this.saveState(); 
+
+            window.onclick = (event) => {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = "none";
+                }
+            }
+        }
+
+        draw() {
+            this.canvas.height = this.rackHeight * U_PIXELS;
+            const ctx = this.ctx;
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+
+            ctx.fillStyle = "#0b0b0b";
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "#333";
+            ctx.fillStyle = "#666";
+            ctx.font = "12px Inter, Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const labelX = (this.currentView === "Front") ? 20 : (RACK_RIGHT_MARGIN + 20);
+
+            for (let i = 0; i < this.rackHeight; i++) {
+                let y = i * U_PIXELS;
+                ctx.beginPath(); ctx.moveTo(RACK_LEFT_MARGIN, y); ctx.lineTo(RACK_RIGHT_MARGIN, y); ctx.stroke();
+                
+                let uNum = this.rackHeight - i;
+                ctx.fillText(uNum, labelX, y + U_PIXELS/2);
+
+                ctx.fillStyle = "#1e1e1e";
+                for(let j=1; j<=3; j++) {
+                    let hy = y + (j * U_PIXELS / 4);
+                    ctx.beginPath(); ctx.arc(RACK_LEFT_MARGIN + 6, hy, 2, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(RACK_RIGHT_MARGIN - 6, hy, 2, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.fillStyle = "#666"; 
+            }
+
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(RACK_LEFT_MARGIN, 0); ctx.lineTo(RACK_LEFT_MARGIN, h);
+            ctx.moveTo(RACK_RIGHT_MARGIN, 0); ctx.lineTo(RACK_RIGHT_MARGIN, h);
+            ctx.stroke();
+
+            this.views[this.currentView].forEach(comp => this.drawComponent(comp));
+
+            if (this.isDragging && this.draggedItem && this.draggedItem.currentSlot) {
+                this.drawGhost(this.draggedItem);
+            }
+
+            this.updateStats();
+        }
+
+        drawComponent(comp) {
+            let topIndex = this.rackHeight - (comp.startU + comp.size - 1);
+            let y = topIndex * U_PIXELS;
+            let height = comp.size * U_PIXELS;
+            let width = RACK_RIGHT_MARGIN - RACK_LEFT_MARGIN;
+
+            this.ctx.fillStyle = comp.color;
+            this.ctx.fillRect(RACK_LEFT_MARGIN + 2, y + 1, width - 4, height - 2);
+            
+            this.ctx.strokeStyle = "rgba(0,0,0,0.3)";
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(RACK_LEFT_MARGIN + 2, y + 1, width - 4, height - 2);
+
+            this.ctx.fillStyle = this.getContrastColor(comp.color);
+            this.ctx.font = "bold 13px Inter, Arial";
+            this.ctx.fillText(comp.name, (RACK_LEFT_MARGIN + RACK_RIGHT_MARGIN)/2, y + height/2);
+            
+            if(comp.size > 1) {
+                 this.ctx.font = "10px Inter, Arial";
+                 this.ctx.globalAlpha = 0.7;
+                 this.ctx.fillText(`${comp.watts}W • ${comp.weight}kg`, (RACK_LEFT_MARGIN + RACK_RIGHT_MARGIN)/2, y + height/2 + 14);
+                 this.ctx.globalAlpha = 1.0;
+            }
+        }
+
+        drawGhost(item) {
+            let topIndex = this.rackHeight - (item.currentSlot + item.size - 1);
+            let y = topIndex * U_PIXELS;
+            let height = item.size * U_PIXELS;
+            let width = RACK_RIGHT_MARGIN - RACK_LEFT_MARGIN;
+
+            this.ctx.globalAlpha = 0.5;
+            this.ctx.fillStyle = item.color;
+            this.ctx.fillRect(RACK_LEFT_MARGIN, y, width, height);
+            this.ctx.globalAlpha = 1.0;
+            
+            let isValid = this.checkAvailability(item.currentSlot, item.size);
+            this.ctx.strokeStyle = isValid ? "#4caf50" : "#ef5350";
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(RACK_LEFT_MARGIN, y, width, height);
+        }
+
+        checkAvailability(startU, size) {
+            if(startU < 1) return false;
+            if(startU + size - 1 > this.rackHeight) return false;
+
+            for(let comp of this.views[this.currentView]) {
+                let sA = startU; 
+                let eA = startU + size - 1;
+                let sB = comp.startU; 
+                let eB = comp.startU + comp.size - 1;
+                if(sA <= eB && eA >= sB) return false;
+            }
+            return true;
+        }
+
+        setupCanvasEvents() {
+            this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+            window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+            window.addEventListener('mouseup', (e) => this.onMouseUp(e));
+        }
+        
+        setupKeyboardEvents() {
+            window.addEventListener('keydown', (e) => {
+                if(e.target.tagName === 'INPUT') return;
+                
+                if(e.key.toLowerCase() === 'v') {
+                    this.toggleView();
+                }
+            });
+        }
+
+        setupDragAndDrop() {
+            const palette = document.querySelector('.left');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                palette.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+            palette.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                this.handleFiles(files);
+            }, false);
+        }
+
+        startDragFromPalette(name, size, color, watts, weight) {
+            this.isDragging = true;
+            this.draggedItem = { 
+                name, size, color, watts, weight, 
+                isNew: true, 
+                currentSlot: null,
+                originalSlot: null
+            };
+        }
+
+        onMouseDown(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if(x < RACK_LEFT_MARGIN || x > RACK_RIGHT_MARGIN) return;
+
+            const clickedIndex = this.views[this.currentView].findIndex(c => {
+                 let topIndex = this.rackHeight - (c.startU + c.size - 1);
+                 let cy = topIndex * U_PIXELS;
+                 let ch = c.size * U_PIXELS;
+                 return (y >= cy && y <= cy + ch);
+            });
+
+            if(clickedIndex !== -1) {
+                const clickedItem = this.views[this.currentView][clickedIndex];
+                
+                if(e.button === 2) { 
+                    if(confirm(`Remove ${clickedItem.name}?`)) {
+                        this.views[this.currentView].splice(clickedIndex, 1);
+                        this.saveState();
+                        this.draw();
+                    }
+                    return;
+                }
+                
+                if(e.button === 1 || (e.button === 0 && e.shiftKey)) {
+                    this.isDragging = true;
+                    this.draggedItem = { ...clickedItem, isNew: true, currentSlot: clickedItem.startU };
+                    this.draw();
+                    return;
+                }
+
+                if(e.button === 0) { 
+                    this.views[this.currentView].splice(clickedIndex, 1);
+                    this.isDragging = true;
+                    this.draggedItem = {
+                        ...clickedItem,
+                        isNew: false,
+                        originalSlot: clickedItem.startU,
+                        currentSlot: clickedItem.startU
+                    };
+                    this.draw();
+                }
+            }
+        }
+
+        onMouseMove(e) {
+            if(!this.isDragging) return;
+            const rect = this.canvas.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+
+            if(y >= 0 && y <= rect.height) {
+                let indexTop = Math.floor(y / U_PIXELS);
+                let potentialStartU = this.rackHeight - (indexTop + this.draggedItem.size - 1);
+                this.draggedItem.currentSlot = potentialStartU;
+                this.draw();
+            } else {
+                this.draggedItem.currentSlot = null;
+                this.draw();
+            }
+        }
+
+        onMouseUp(e) {
+            if(!this.isDragging) return;
+            let dropped = false;
+
+            if(this.draggedItem && this.draggedItem.currentSlot) {
+                const slot = this.draggedItem.currentSlot;
+                const size = this.draggedItem.size;
+                if(this.checkAvailability(slot, size)) {
+                    this.views[this.currentView].push({
+                        name: this.draggedItem.name,
+                        size: this.draggedItem.size,
+                        color: this.draggedItem.color,
+                        watts: this.draggedItem.watts,
+                        weight: this.draggedItem.weight,
+                        startU: slot
+                    });
+                    dropped = true;
+                    this.saveState();
+                }
+            }
+            if(!dropped && !this.draggedItem.isNew) {
+                this.views[this.currentView].push({
+                    name: this.draggedItem.name,
+                    size: this.draggedItem.size,
+                    color: this.draggedItem.color,
+                    watts: this.draggedItem.watts,
+                    weight: this.draggedItem.weight,
+                    startU: this.draggedItem.originalSlot
+                });
+            }
+            
+            this.isDragging = false;
+            this.draggedItem = null;
+            this.draw();
+        }
+
+        renderPalette() {
+            const list = document.getElementById('palette-list');
+            list.innerHTML = "";
+            const search = document.getElementById('search').value.toLowerCase();
+
+            for (const [catName, items] of Object.entries(this.categories)) {
+                if (Object.keys(items).length === 0 && catName !== "Custom") continue; 
+
+                const matches = Object.entries(items).filter(([name]) => name.toLowerCase().includes(search));
+                if(matches.length === 0 && catName !== "Custom") continue;
+
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.innerText = catName;
+                list.appendChild(header);
+
+                matches.forEach(([name, data]) => {
+                    const div = document.createElement('div');
+                    div.className = 'item';
+                    
+                    div.innerHTML = `
+                        <div class="item-pill" style="background:${data.color}"></div>
+                        <div class="item-info">
+                            <div class="item-name">${name}</div>
+                            <div class="item-details">${data.size}U • ${data.watts}W</div>
+                        </div>
+                        <div class="item-size-badge">${data.size}U</div>
+                    `;
+                    
+                    div.addEventListener('mousedown', (e) => {
+                        e.preventDefault(); 
+                        this.startDragFromPalette(name, data.size, data.color, data.watts, data.weight);
+                    });
+                    list.appendChild(div);
+                });
+            }
+        }
+
+        filterPalette() { this.renderPalette(); }
+
+        toggleView() {
+            this.currentView = (this.currentView === "Front") ? "Rear" : "Front";
+            document.getElementById('view-label').innerText = `Rack View: ${this.currentView}`;
+            this.draw();
+        }
+
+        resizeRack() {
+            this.rackHeight = parseInt(document.getElementById('rack-size-select').value);
+            this.draw();
+            this.saveState();
+        }
+
+        clearRack() {
+            if(confirm("Clear current view?")) {
+                this.views[this.currentView] = [];
+                this.draw();
+                this.saveState();
+            }
+        }
+
+        updateStats() {
+            let occupied = new Set();
+            this.views[this.currentView].forEach(c => {
+                for(let i=0; i<c.size; i++) occupied.add(c.startU + i);
+            });
+            document.getElementById('stat-used').innerText = `${occupied.size} U`;
+
+            let w = 0, kg = 0;
+            Object.values(this.views).flat().forEach(c => {
+                w += (c.watts || 0);
+                kg += (c.weight || 0);
+            });
+            document.getElementById('stat-power').innerText = `${w} W`;
+            document.getElementById('stat-weight').innerText = `${kg.toFixed(1)} kg`;
+        }
+
+        getContrastColor(hex) {
+            if(!hex) return 'black';
+            hex = hex.replace("#", "");
+            var r = parseInt(hex.substr(0,2),16);
+            var g = parseInt(hex.substr(2,2),16);
+            var b = parseInt(hex.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? 'black' : 'white';
+        }
+
+        saveState() {
+            if (this.historyStep < this.history.length - 1) {
+                this.history = this.history.slice(0, this.historyStep + 1);
+            }
+            const state = JSON.stringify({
+                views: this.views,
+                rackHeight: this.rackHeight
+            });
+            this.history.push(state);
+            this.historyStep++;
+        }
+
+        undo() {
+            if (this.historyStep > 0) {
+                this.historyStep--;
+                const state = JSON.parse(this.history[this.historyStep]);
+                this.views = state.views;
+                this.rackHeight = state.rackHeight;
+                document.getElementById('rack-size-select').value = this.rackHeight;
+                this.draw();
+            }
+        }
+
+        redo() {
+            if (this.historyStep < this.history.length - 1) {
+                this.historyStep++;
+                const state = JSON.parse(this.history[this.historyStep]);
+                this.views = state.views;
+                this.rackHeight = state.rackHeight;
+                document.getElementById('rack-size-select').value = this.rackHeight;
+                this.draw();
+            }
+        }
+
+        exportPNG() {
+            const link = document.createElement('a');
+            link.download = `RackPlanner_${this.currentView}.png`;
+            link.href = this.canvas.toDataURL();
+            link.click();
+        }
+
+        openCreator() { document.getElementById('createModal').style.display = "flex"; }
+        closeCreator() { document.getElementById('createModal').style.display = "none"; }
+
+        saveCustomItem() {
+            const name = document.getElementById('new-name').value.trim();
+            const size = parseInt(document.getElementById('new-size').value);
+            const color = document.getElementById('new-color').value;
+            const watts = parseInt(document.getElementById('new-watts').value) || 0;
+            const weight = parseFloat(document.getElementById('new-weight').value) || 0;
+
+            if(!name) { alert("Please enter a name"); return; }
+            if(!this.categories["Custom"]) this.categories["Custom"] = {};
+
+            this.categories["Custom"][name] = { size, color, watts, weight };
+            this.renderPalette();
+            this.closeCreator();
+            
+            document.getElementById('new-name').value = "";
+        }
+
+        exportSingleItem() {
+            const name = document.getElementById('new-name').value.trim();
+            if(!name) { alert("Please enter a name to export"); return; }
+            const size = parseInt(document.getElementById('new-size').value);
+            const color = document.getElementById('new-color').value;
+            const watts = parseInt(document.getElementById('new-watts').value) || 0;
+            const weight = parseFloat(document.getElementById('new-weight').value) || 0;
+            const data = { [name]: { size, color, watts, weight } };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${name}.json`;
+            link.click();
+        }
+
+        importCustomList(input) {
+            const files = input.files;
+            this.handleFiles(files);
+            input.value = ''; 
+        }
+
+        handleFiles(files) {
+            if(!files || files.length === 0) return;
+            let loadedCount = 0;
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        const name = file.name.replace(".json", "");
+                        this.categories[name] = json;
+                        loadedCount++;
+                        if(loadedCount === files.length) {
+                            this.renderPalette();
+                        }
+                    } catch(err) { console.error("Bad JSON", file.name); }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        saveProject() {
+            const data = {
+                version: "Web-1.0",
+                rackHeight: this.rackHeight,
+                views: this.views,
+                categories: this.categories
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "my-rack-project.json";
+            link.click();
+        }
+
+        loadProject(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    this.rackHeight = data.rackHeight || 12;
+                    this.views = data.views || {Front:[], Rear:[]};
+                    if(data.categories) this.categories = data.categories;
+                    document.getElementById('rack-size-select').value = this.rackHeight;
+                    this.currentView = "Front"; 
+                    document.getElementById('view-label').innerText = "Rack View: Front";
+                    this.renderPalette();
+                    this.draw();
+                    this.saveState();
+                } catch(err) { alert("Error loading project"); }
+            };
+            reader.readAsText(file);
+        }
+
+        openHelp() { document.getElementById('helpModal').style.display = "flex"; }
+        closeHelp() { document.getElementById('helpModal').style.display = "none"; }
+        openAbout() { document.getElementById('aboutModal').style.display = "flex"; }
+        closeAbout() { document.getElementById('aboutModal').style.display = "none"; }
+    }
+
+    try {
+        const app = new RackApp();
+        window.app = app; 
+    } catch (e) {
+        alert("Error initializing App: " + e);
+    }
+    
+    function toggleLeft() { 
+        const left = document.querySelector('.left');
+        left.classList.toggle('collapsed');
+        
+        const restoreBtn = document.getElementById('restore-left');
+        restoreBtn.style.display = left.classList.contains('collapsed') ? 'block' : 'none';
+    }
+    
+    function toggleRight() { 
+        const right = document.querySelector('.right');
+        right.classList.toggle('collapsed-right');
+        
+        const restoreBtn = document.getElementById('restore-right');
+        restoreBtn.style.display = right.classList.contains('collapsed-right') ? 'block' : 'none';
+    }
+
+  </script>
+</body>
+</html>
